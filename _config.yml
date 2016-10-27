@@ -63,9 +63,9 @@ pagination_dir: page
 
 # Extensions
 ## Plugins: http://hexo.io/plugins/
-plugins:
-- hexo-generator-feed
-- hexo-renderer-less
+# plugins:
+# - hexo-generator-feed
+# - hexo-renderer-less
 
 duoshuo_shortname: fengshenzhu
 ## Themes: http://hexo.io/themes/
