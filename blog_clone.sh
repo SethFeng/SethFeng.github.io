@@ -9,6 +9,7 @@ mv temp/node_modules .
 mv temp/package.json .
 sleep 3
 rm -rf temp
+npm install hexo-deployer-git --save
 git clone https://github.com/iissnan/hexo-theme-next themes/next
 hexo clean
 hexo g
