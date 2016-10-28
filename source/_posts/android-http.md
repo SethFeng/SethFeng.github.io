@@ -1,4 +1,4 @@
-title: Android network request
+title: Android HTTP Request 
 date: 2015-12-23 20:53:33
 tags: android
 ---

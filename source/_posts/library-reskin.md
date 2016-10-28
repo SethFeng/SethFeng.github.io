@@ -1,181 +1,174 @@
-title: Android网络库Wasp
-date: 2016-01-29 18:00:27
-tags:
-- Android
-- 网络
-categories:
-- Android开发
 ---
-# 介绍
-通过Wasp库使用HTTP GET方式获取内容的示例介绍Wasp的使用，URL为https://api.github.com/users/sethfeng/repos
-使用Java interface提供HTTP API：
-```java
-public interface GitHubService {
-    @GET("users/{user}/repos")
-    void listRepos(@Path("user") String user, 
-                  Callback<List<Repo>> callback);
-}
-```
+title: Android换肤
+author: 冯神柱
+---
+## 需求：支持夜间模式
+
+## 资源形式：APK内部
+
+## 期待方案特点：代码修改小、皮肤资源与主程序资源辨识度高、效率高、可扩展（自定义View及自定义属性）
+
+## 技术途径
+    - 手动设置View属性
+        每个View的每个属性都至少要一行代码，且与具体Activity联系紧密。代码冗长，修改麻烦。
+    - Activity Theme
+        需要重启Activity
+    - 资源重定向
+        在基类Activity里可实现换肤，无需侵入现有业务Activity及其布局文件和资源文件
 
 <!-- more -->
 
-创建Wasp：
+## 资源重定向
+### 原理：见theory
+## 找到下手的时机：
+    根据theory分析，LayoutInflater构造View对象有4种的选择：
+        1. mFactory2.onCreateView()
+        2. mFactory.onCreateView()
+        3. mPrivateFactory.onCreateView()，会调用到Activity的onCreateView() 
+        4. LayoutInflater.createView(String name, String prefix, AttributeSet attrs)
+    法1和法2可轻松通过Activity.getLayoutInflater().setFactory()设置，在反射调用View的构造函数前修改其属性。
+    法3的mPrivateFactory可以通过Activity的onCreateView()自行初始化View。
+    到了法4这步，已经无能为力了...
+从这里看，1、2、3没有区别，demo暂时选取法2，截断系统默认createView()的过程。
+如何自己实例化出View?仿制！
 ```java
-Wasp wasp = new Wasp.Builder(getContext())
-            .setEndpoint("https://api.github.com")
-            .build();
-```
-创建HTTP service：
-```
-GitHubService service = wasp.create(GitHubService.class);
-```
-调用HTTP service里方法发送请求：
-```java
-gitHubService.listRepos("sethfeng", new Callback<List<Repo>>{
-  @Override
-  public void onSuccess(WaspResponse response, List<Repo> repos) {
-    // do something
-  }
-  @Override
-  public void onError(WaspError error) {
-    // handle error
-  }
-});
-```
+public class SkinLayoutInflaterFactory implements LayoutInflater.Factory {
+    @Override
+    public View onCreateView(String name, Context context, AttributeSet attrs) {
+        // 实例化View。自行预处理前缀，调用LayoutInflater.createView()实例化
+        for (String prefix : sClassPrefixList) {
+            try {
+                View view = mLayoutInflater.createView(name, prefix, attrs);
+                if (view != null) {
+                    // 记录需要改变属性的View及其属性
+                    addSkinViewIfNecessary(view, attrs);
+                    return view;
+                }
+            } catch (ClassNotFoundException e) {
+                // In this case we want to let the base class take a crack
+                // at it.
+            }
+        }
 
-# API
-## 请求方法GET/POST
-HTTP请求方法使用注解标识：
-```java
-@GET(...)
-```
-```java
-@POST(...)
-```
+        return mLayoutInflater.createView(name, null, attrs);
+    }
+}
 
-## URL组装
-先来看一个常见的URL组成部分：
-`http://example.com/index.html?name=sethfeng`
-```
-protocol = http
-host = example.com
-path = /index.html
-query = name=sethfeng
-```
-再看Wasp对各参数的API封装：
-### - protocol和host
-使用Wasp的`EndPoint`声明，EndPoint又称baseUrl
-```java
-Wasp.Builder.setEndPoint(protocol + host)
-```
-### - path
-使用注解`Path`设置path中的参数
-```java
-@GET("/repos/{id}")
-void getRepo(@Path("id") String id, 
-            Callback<Repo> callback);
-```
-组装出的url为`https://api.github.com/repos/id`
-### - query
-query参数设置：
-```java
-@GET("group/{id}/users")
-void groupList(@Path("id") int id, 
-              @Query("sort") String sort, 
-              Callback<List<User>> callback);
-```
-组装出的url为`https://api.github.com/repos/id/users?sort=sort`
-当query参数为多个时，可使用`QueryMap`替代多个Query：
-```java
-@GET("group/{id}/users")
-void groupList(@Path("id") int id, 
-              @QueryMap Map<String, String> query, 
-              Callback<List<User>> callback);
-```
-等同于：
-```java
-@GET("group/{id}/users")
-void groupList(@Path("id") int id, 
-              @Query("sort") String sort, 
-              @Query("limit") int limit, 
-              Callback<List<User>> callback);
-```
-相应地，query参数要封装成Map传入：
-```java
-HashMap<String, String> query = new HashMap();
-query.put("sort", sort);
-query.put("limit", limit);
-```
-组装出的url为`https://api.github.com/repos/id/users?sort=sort&limit=limit`
+List<SkinItem> textViewTextColorList = new ArrayList<>();
 
-## 解析器
-Wasp默认使用Gson解析网络请求返回数据。若要自定义解析器，传入自定义的解析器。自定义解析器需要实现`Parser`接口。
-```java
-public class CustomParser implements Parser {
-  @Override
-  public <T> T fromBody(String content, Type type) throws IOException { // 结果解析
-    ...
-  }
-  @Override
-  public String toBody(Object body) { // POST body组装
-    ...
-  }
-  @Override
-  public String getSupportedContentType() {
-    ...
-  }
+private void addSkinViewIfNecessary(View view, AttributeSet attrs) {
+    if (view instanceof TextView) {
+        int n = attrs.getAttributeCount();
+        for (int i = 0; i < n; i++) {
+            String attrName = attrs.getAttributeName(i);         
+            if (attrName.equals("textColor")) {
+                int id = 0;
+                String attrValue = attrs.getAttributeValue(i);
+                if (attrValue.startsWith("@")) { // 如"@2131427389"
+                    id = Integer.parseInt(attrValue.substring(1));
+                    textViewTextColorList.add(new SkinItem(view, id));
+                }
+            }
+        }
+    }
 }
 ```
-创建Wasp时可设置自定义的解析器：
-```
-Wasp wasp = new Wasp.Builder(getContext())
-            .setEndpoint("https://api.github.com")
-            .setParser(new CustomParser())
-            .build();
-```
 
-## POST请求
-HTTP POST请求需要处理HTTP body。`Parser.toBody()`可自定义body参数的处理。
-```java
-@POST("/repos/{user}/{repo}")
-void addName(@Path("user") String user,
-             @Path("repo") String repo,
-             @Body String body,
-             Callback<Repo> callback
-);
+### 千呼万唤始出来！
+遍历记录感兴趣的View及其属性的数据结构，通过重定向资源更新属性值。以替换TextView的textColor为例。
+布局：
+```xml
+<TextView
+    android:id="@+id/change_text_color"
+    android:textColor="@color/textColor"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Hello World!"/>
 ```
-发送POST请求：
+更换主题：
 ```java
-gitHubService.addName(user, repo, body, callback);
-```
+textView.setTextColor(getColor(resId));
 
-## 同步/异步
-异步请求使用网络库统一管理网络访问线程。若需要使用同步方式，网络请求在发起请求的线程里执行。请勿在Android主线程使用同步方式。
-同步接口不传入回调，直接调用接口方法获取数据。请求接口声明：
-```java
-@GET("users/{user}/repos")
-List<Repo> listRepos(@Path("user") String user);
+// 用老的资源id获取新主题资源，需要一次华丽的转身：id -> name -> new name -> new id
+private int getColor(int oldResId, String suffix) {
+    String oldResName = mContext.getResources().getResourceEntryName(oldResId);
+    String newResName = oldResName + suffix;
+    int newResId = mContext.getResources().getIdentifier(newResName, "color", mContext
+            .getPackageName());
+    return mContext.getResources().getColor(newResId);
+}
 ```
-发送请求：
+过程说明：
+生成的R.java中textColor resource id：
 ```java
-List<Repo> repos = gitHubService.listRepos(user);
+public static final class color {
+    ...
+    public static final int textColor=0x7f0b003d;
+    public static final int textColor_night=0x7f0b003e; 
+}
 ```
+oldResId = 2131427389，转16进制为0x7f0b003d，即R.color.textColor 
+oldResName = textColor
+newResName = textColor_night
+newResId 2131427390，转16进制为0x7f0b003e，即R.color.textColor_night 
+使用新resource id通过Resource获取新色值，设置到view里，完成这个TextView的textColor属性更改。
 
-## 取消异步请求
-在Android界面销毁时可能需要取消已经发送但还未收到结果的网络请求。与异步接口的区别仅在于接口方法返回参数不同：
-```java
-@GET("users/{user}/repos")
-WaspRequest listRepos(@Path("user") String user, 
-                      Callback<List<Repo>> callback);
-```
-发起和取消请求：
-```java
-// 发起请求
-WaspRequest request = gitHubService.listRepos(user, callback);
+### 关注的资源类型：
+    - color
+    - drawable
 
-// 取消请求
-request.cancel();
-```
+## 关注的View属性：
+    - TextView textColor(color)
+    - View background(color/drawable)
+    - ListView divider(color/drawable)
+    - AbsListView listSelector(color/drawable)
+    - ImageView src(src)
 
-# 库维护地址
-  - https://github.com/SethFeng/wasp
+    - View background(drawable)
+    - TextView textColor textColorHint drawableLeft
+    - ListView divider(drawable)
+    - AbsListView listSelector(color/drawable)
+    - ExpandableListView childDivider
+    - ImageView src
+    - 自定义View
+    - ...
+
+## 关于资源位置
+    资源位置的问题影响的仅仅是资源重定向的问题。
+    内置资源重定向：
+    外置打包资源重定向：
+
+#### TODO
+    - LayoutInflater.Factory解读：
+        - Factory/Factory2/FactoryMerger， Factory和Factory2只能设置一个且一次
+        - 成员变量mFactory/mFactory2/mPrivateFactory
+    - 评估构造View时mConstructorArgs未像系统一样处理时的影响
+    - include/merge/viewstub/手动infalte创建View/手动new创建View/手动动态addView和removeView/Fragment对Factory.onCreateView()的影响
+
+## 项目分析
+### 1. hongyangAndroid/ChangeSkin
+    - 支持内部主题资源(后缀名)和外部主题资源(apk)
+    - Applicataion.onCreate()初始化
+    - MainActivity extends BaseSkinActivity
+    - BaseSkinActivity extends AppCompatActivity
+    - BaseSkinActivity.onCreateView()通过AppCompatActivity.getDelegate()反射获取createView
+    - 主题属性值以skin开头
+### 2. hongyangAndroid/AndroidChangeSkin
+    - 支持内部主题资源(后缀名)和外部主题资源(apk)
+    - MainActivity extends AppCompatActivity
+    - MainActivity.onCreate()/onDestroy()注册和反注册
+    - 主题View添加tag指明需要更换的属性
+    - 添加ImageView src支持
+    - 需要手动遍历View，效率不好
+### 3. fengjundev/Android-Skin-Loader
+    - 反射new一个AssetManager，反射调用其addAssetPath()，创建一个新的Resources给SkinManager.mResources
+    - 主题View加属性skin:enable="true"
+    - 动态添加View DynamicAttr
+
+## 参考
+- http://blog.zhaiyifan.cn/2015/09/10/Android换肤技术总结/
+- http://blog.zhaiyifan.cn/2015/11/20/新的换肤思路/
+- https://github.com/brokge/NightModel 每个需要改变主题的View都手动设置一遍
+- http://blog.bradcampbell.nz/layoutinflater-factories/ LayoutInflater.Factory讲解
+- https://github.com/chrisjenx/Calligraphy 更换文字字体，LayoutInflater.setFactory()
+- https://github.com/hongyangAndroid/ChangeSkin 

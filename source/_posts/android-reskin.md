@@ -1,174 +1,256 @@
+title: Android换肤理论分析
+date: 2015-12-23 20:53:33
+tags: android
 ---
-title: Android换肤
-author: 冯神柱
----
-## 需求：支持夜间模式
 
-## 资源形式：APK内部
+# 换肤理论基础：View的创建过程。
 
-## 期待方案特点：代码修改小、皮肤资源与主程序资源辨识度高、效率高、可扩展（自定义View及自定义属性）
-
-## 技术途径
-    - 手动设置View属性
-        每个View的每个属性都至少要一行代码，且与具体Activity联系紧密。代码冗长，修改麻烦。
-    - Activity Theme
-        需要重启Activity
-    - 资源重定向
-        在基类Activity里可实现换肤，无需侵入现有业务Activity及其布局文件和资源文件
+## 从xml到View：
+Activity：
+```java
+public void setContentView(int layoutResID) {
+    ...
+    mLayoutInflater.inflate(layoutResID, mContentParent);
+    ...
+}
+```
 
 <!-- more -->
 
-## 资源重定向
-### 原理：见theory
-## 找到下手的时机：
-    根据theory分析，LayoutInflater构造View对象有4种的选择：
-        1. mFactory2.onCreateView()
-        2. mFactory.onCreateView()
-        3. mPrivateFactory.onCreateView()，会调用到Activity的onCreateView() 
-        4. LayoutInflater.createView(String name, String prefix, AttributeSet attrs)
-    法1和法2可轻松通过Activity.getLayoutInflater().setFactory()设置，在反射调用View的构造函数前修改其属性。
-    法3的mPrivateFactory可以通过Activity的onCreateView()自行初始化View。
-    到了法4这步，已经无能为力了...
-从这里看，1、2、3没有区别，demo暂时选取法2，截断系统默认createView()的过程。
-如何自己实例化出View?仿制！
+LayoutInflater:
 ```java
-public class SkinLayoutInflaterFactory implements LayoutInflater.Factory {
-    @Override
-    public View onCreateView(String name, Context context, AttributeSet attrs) {
-        // 实例化View。自行预处理前缀，调用LayoutInflater.createView()实例化
-        for (String prefix : sClassPrefixList) {
-            try {
-                View view = mLayoutInflater.createView(name, prefix, attrs);
-                if (view != null) {
-                    // 记录需要改变属性的View及其属性
-                    addSkinViewIfNecessary(view, attrs);
-                    return view;
-                }
-            } catch (ClassNotFoundException e) {
-                // In this case we want to let the base class take a crack
-                // at it.
-            }
-        }
-
-        return mLayoutInflater.createView(name, null, attrs);
-    }
-}
-
-List<SkinItem> textViewTextColorList = new ArrayList<>();
-
-private void addSkinViewIfNecessary(View view, AttributeSet attrs) {
-    if (view instanceof TextView) {
-        int n = attrs.getAttributeCount();
-        for (int i = 0; i < n; i++) {
-            String attrName = attrs.getAttributeName(i);         
-            if (attrName.equals("textColor")) {
-                int id = 0;
-                String attrValue = attrs.getAttributeValue(i);
-                if (attrValue.startsWith("@")) { // 如"@2131427389"
-                    id = Integer.parseInt(attrValue.substring(1));
-                    textViewTextColorList.add(new SkinItem(view, id));
-                }
-            }
-        }
-    }
-}
-```
-
-### 千呼万唤始出来！
-遍历记录感兴趣的View及其属性的数据结构，通过重定向资源更新属性值。以替换TextView的textColor为例。
-布局：
-```xml
-<TextView
-    android:id="@+id/change_text_color"
-    android:textColor="@color/textColor"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:text="Hello World!"/>
-```
-更换主题：
-```java
-textView.setTextColor(getColor(resId));
-
-// 用老的资源id获取新主题资源，需要一次华丽的转身：id -> name -> new name -> new id
-private int getColor(int oldResId, String suffix) {
-    String oldResName = mContext.getResources().getResourceEntryName(oldResId);
-    String newResName = oldResName + suffix;
-    int newResId = mContext.getResources().getIdentifier(newResName, "color", mContext
-            .getPackageName());
-    return mContext.getResources().getColor(newResId);
-}
-```
-过程说明：
-生成的R.java中textColor resource id：
-```java
-public static final class color {
+public View inflate(@LayoutRes int resource, @Nullable ViewGroup root, boolean attachToRoot) {
+    final Resources res = getContext().getResources();
     ...
-    public static final int textColor=0x7f0b003d;
-    public static final int textColor_night=0x7f0b003e; 
+    final XmlResourceParser parser = res.getLayout(resource);
+    try {
+        return inflate(parser, root, attachToRoot);
+    } finally {
+        parser.close();
+    }
+    ...
+}
+
+public View inflate(XmlPullParser parser, @Nullable ViewGroup root, boolean attachToRoot) {
+    ...
+    final View temp = createViewFromTag(root, name, inflaterContext, attrs); // 创建用户xml根布局View
+    ...
+    rInflateChildren(parser, temp, attrs, true); // 创建用户xml根布局的children
+    ...
+}
+
+// rInflateChildren调用到
+void rInflate(XmlPullParser parser, View parent, Context context,
+            AttributeSet attrs, boolean finishInflate) throws XmlPullParserException, IOException {
+    ...
+    final View view = createViewFromTag(parent, name, context, attrs);
+    final ViewGroup viewGroup = (ViewGroup) parent;
+    final ViewGroup.LayoutParams params = viewGroup.generateLayoutParams(attrs);
+    rInflateChildren(parser, view, attrs, true);
+    viewGroup.addView(view, params);
+    ...
 }
 ```
-oldResId = 2131427389，转16进制为0x7f0b003d，即R.color.textColor 
-oldResName = textColor
-newResName = textColor_night
-newResId 2131427390，转16进制为0x7f0b003e，即R.color.textColor_night 
-使用新resource id通过Resource获取新色值，设置到view里，完成这个TextView的textColor属性更改。
+都指向了LayoutInflater.createViewFromTag()
+```java
+View createViewFromTag(View parent, String name, Context context, AttributeSet attrs,
+            boolean ignoreThemeAttr) {
+    ...
+    View view;
+    if (mFactory2 != null) {
+        view = mFactory2.onCreateView(parent, name, context, attrs);
+    } else if (mFactory != null) {
+        view = mFactory.onCreateView(name, context, attrs);
+    } else {
+        view = null;
+    }
 
-### 关注的资源类型：
-    - color
-    - drawable
+    if (view == null && mPrivateFactory != null) {
+        view = mPrivateFactory.onCreateView(parent, name, context, attrs);
+    }
 
-## 关注的View属性：
-    - TextView textColor(color)
-    - View background(color/drawable)
-    - ListView divider(color/drawable)
-    - AbsListView listSelector(color/drawable)
-    - ImageView src(src)
+    if (view == null) {
+        final Object lastContext = mConstructorArgs[0];
+        mConstructorArgs[0] = context;
+        try {
+            if (-1 == name.indexOf('.')) { // 系统View，需要补全前缀，之后调用如同下面的createView()
+                view = onCreateView(parent, name, attrs);
+            } else {
+                view = createView(name, null, attrs);
+            }
+        } finally {
+            mConstructorArgs[0] = lastContext;
+        }
+    }
 
-    - View background(drawable)
-    - TextView textColor textColorHint drawableLeft
-    - ListView divider(drawable)
-    - AbsListView listSelector(color/drawable)
-    - ExpandableListView childDivider
-    - ImageView src
-    - 自定义View
-    - ...
+    return view;
+    ...
+}
+```
 
-## 关于资源位置
-    资源位置的问题影响的仅仅是资源重定向的问题。
-    内置资源重定向：
-    外置打包资源重定向：
+#### xml布局文件中简写的系统View需要补全前缀
+    布局的LayoutInflater类型实际为PhoneLayoutInflater。
+    系统View自动添加前缀列表，PhoneLayoutInflater.onCreateView()
+        android.widget.
+        android.webkit.
+        android.app.
+    添加前缀使用反射尝试找到构造函数来构造View对象，失败了就换个前缀再次尝试下一个前缀。遍历完还是失败，调用super LayoutInflater的方法，添加前缀"android.view."。
+    如：LinearLayout补全为android.widget.LinearLayout。
 
-#### TODO
-    - LayoutInflater.Factory解读：
-        - Factory/Factory2/FactoryMerger， Factory和Factory2只能设置一个且一次
-        - 成员变量mFactory/mFactory2/mPrivateFactory
-    - 评估构造View时mConstructorArgs未像系统一样处理时的影响
-    - include/merge/viewstub/手动infalte创建View/手动new创建View/手动动态addView和removeView/Fragment对Factory.onCreateView()的影响
+```java
+private Factory mFactory;
+private Factory2 mFactory2;
+private Factory2 mPrivateFactory;
+```
 
-## 项目分析
-### 1. hongyangAndroid/ChangeSkin
-    - 支持内部主题资源(后缀名)和外部主题资源(apk)
-    - Applicataion.onCreate()初始化
-    - MainActivity extends BaseSkinActivity
-    - BaseSkinActivity extends AppCompatActivity
-    - BaseSkinActivity.onCreateView()通过AppCompatActivity.getDelegate()反射获取createView
-    - 主题属性值以skin开头
-### 2. hongyangAndroid/AndroidChangeSkin
-    - 支持内部主题资源(后缀名)和外部主题资源(apk)
-    - MainActivity extends AppCompatActivity
-    - MainActivity.onCreate()/onDestroy()注册和反注册
-    - 主题View添加tag指明需要更换的属性
-    - 添加ImageView src支持
-    - 需要手动遍历View，效率不好
-### 3. fengjundev/Android-Skin-Loader
-    - 反射new一个AssetManager，反射调用其addAssetPath()，创建一个新的Resources给SkinManager.mResources
-    - 主题View加属性skin:enable="true"
-    - 动态添加View DynamicAttr
+#### LayoutInflater构造View可能的选择：
+    - mFactory2.onCreateView()
+    - mFactory.onCreateView()
+    - mPrivateFactory.onCreateView()，由于Activtiy implements LayoutInflater.Factory2，会调用到Activity的onCreateView() 
+    - LayoutInflater.createView(String name, String prefix, AttributeSet attrs)
 
-## 参考
-- http://blog.zhaiyifan.cn/2015/09/10/Android换肤技术总结/
-- http://blog.zhaiyifan.cn/2015/11/20/新的换肤思路/
-- https://github.com/brokge/NightModel 每个需要改变主题的View都手动设置一遍
-- http://blog.bradcampbell.nz/layoutinflater-factories/ LayoutInflater.Factory讲解
-- https://github.com/chrisjenx/Calligraphy 更换文字字体，LayoutInflater.setFactory()
-- https://github.com/hongyangAndroid/ChangeSkin 
+## 实例化View：LayoutInflater.createView()
+```java
+public final View createView(String name, String prefix, AttributeSet attrs)
+            throws ClassNotFoundException, InflateException {
+    Constructor<? extends View> constructor = sConstructorMap.get(name);
+    Class<? extends View> clazz = null;
+    ...
+    if (constructor == null) {
+        // Class not found in the cache, see if it's real, and try to add it
+        clazz = mContext.getClassLoader().loadClass(
+                prefix != null ? (prefix + name) : name).asSubclass(View.class);
+        
+        if (mFilter != null && clazz != null) {
+            boolean allowed = mFilter.onLoadClass(clazz);
+            if (!allowed) {
+                failNotAllowed(name, prefix, attrs);
+            }
+        }
+        constructor = clazz.getConstructor(mConstructorSignature);
+        constructor.setAccessible(true);
+        sConstructorMap.put(name, constructor); // sConstructorMap缓存使用过的构造函数，减少调用ClassLoader的次数
+    } else {
+        ...
+    }
+
+    Object[] args = mConstructorArgs;
+    args[1] = attrs;
+    final View view = constructor.newInstance(args);
+    ...
+    return view;
+    ...
+}
+```
+View的对象实例化通过反射调用其构造函数：View(Context context, @Nullable AttributeSet attrs)。
+自此，View的Java对象才创建出来。
+
+如果到这里还没有修改记录View的属性，生米已成熟饭，晚矣!
+
+#### DecorView的初始化 PhoneWindow.mDecorView
+PhoneWindow
+```java
+private void installDecor() {
+    if (mDecor == null) {
+        mDecor = generateDecor(); // 初始化DecorView
+        ...
+    }
+    if (mContentParent == null) {
+        mContentParent = generateLayout(mDecor); // 激动，开始布局xml了么？
+        ...
+    }
+    ...
+}
+
+protected ViewGroup generateLayout(DecorView decor) {
+    ...
+    layoutResource = R.layout.screen_simple; // 一个模板布局
+    ...
+    View in = mLayoutInflater.inflate(layoutResource, null);
+    decor.addView(in, new ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT));
+    mContentRoot = (ViewGroup) in;
+
+    ViewGroup contentParent = (ViewGroup)findViewById(ID_ANDROID_CONTENT);
+    ...
+}
+```
+
+#### R.layout.screen_simple
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+/* //device/apps/common/assets/res/layout/screen_simple.xml
+**
+** Copyright 2006, The Android Open Source Project
+**
+** Licensed under the Apache License, Version 2.0 (the "License"); 
+** you may not use this file except in compliance with the License. 
+** You may obtain a copy of the License at 
+**
+**     http://www.apache.org/licenses/LICENSE-2.0 
+**
+** Unless required by applicable law or agreed to in writing, software 
+** distributed under the License is distributed on an "AS IS" BASIS, 
+** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+** See the License for the specific language governing permissions and 
+** limitations under the License.
+*/
+
+This is an optimized layout for a screen, with the minimum set of features
+enabled.
+-->
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical">
+    <ViewStub android:id="@+id/action_mode_bar_stub"
+              android:inflatedId="@+id/action_mode_bar"
+              android:layout="@layout/action_mode_bar"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:theme="?attr/actionBarTheme" />
+    <FrameLayout
+         android:id="@android:id/content"
+         android:layout_width="match_parent"
+         android:layout_height="match_parent"
+         android:foregroundInsidePadding="false"
+         android:foregroundGravity="fill_horizontal|top"
+         android:foreground="?android:attr/windowContentOverlay" />
+</LinearLayout>
+```
+这里解释了Activity.onCreateView打印出来的前三个View
+
+## R.layout.activity_main
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/change_text_color"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Hello World!"/>
+</RelativeLayout>
+```
+
+#### Activity.onCreateView(View parent, String name, Context context, AttributeSet attrs)打印出来的各个字段值：
+
+| parent | name | context | attrs |
+| ---- | ---- | ---- | ----|
+| null | LinearLayout | skin.theory.MainActivity@e3ae6f5 | android.content.res.XmlBlock$Parser@7f12c8a |
+| android.widget.LinearLayout{9fe32fb V.E...... ......I. 0,0-0,0} | ViewStub | android.view.ContextThemeWrapper@de65f18 | android.content.res.XmlBlock$Parser@7f12c8a |
+| android.widget.LinearLayout{9fe32fb V.E...... ......I. 0,0-0,0} | FrameLayout | skin.theory.MainActivity@e3ae6f5 | android.content.res.XmlBlock$Parser@7f12c8a |
+| android.widget.FrameLayout{66e54c4 V.E...... ......I. 0,0-0,0 #1020002 android:id/content} | RelativeLayout | skin.theory.MainActivity@e3ae6f5 | android.content.res.XmlBlock$Parser@e65ffad |
+| android.widget.RelativeLayout{222c2e2 V.E...... ......I. 0,0-0,0} | TextView | skin.theory.MainActivity@e3ae6f5 | android.content.res.XmlBlock$Parser@e65ffad |
+
+View层级关系:
+- LinearLayout (PhoneWindow.mContentParent)
+    - ViewStub
+    - FrameLayout <font color="red">(android:id/content)</font>
+        - RelativeLayout
+            - TextView

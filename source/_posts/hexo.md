@@ -1,4 +1,4 @@
-title: 使用Hexo生成博客
+title: 使用Hexo搭建博客
 date: 2015-12-23 19:47:47
 tags: [blog, hexo]
 categories: Tools
