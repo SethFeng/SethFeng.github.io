@@ -123,4 +123,5 @@ References
 https://github.com/square/retrofit
 http://android-developers.blogspot.com/2011/09/androids-http-clients.html
 http://httpcomponents.apache.org
+https://realm.io/cn/news/droidcon-jake-wharton-simple-http-retrofit-2/
 

@@ -90,3 +90,8 @@ Markdown语法还是比较简单的。经常使用的有：
 | Li Lei     |  20  |   male |
 | Han Meimei |  18  | female |
 如果简单表格不能满足需求，还是想想办法用HTML或者图片代替吧。
+
+# 流程图
+## flowchart
+
+## sequence

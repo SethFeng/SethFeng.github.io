@@ -179,3 +179,138 @@ request.cancel();
 
 # 库维护地址
   - https://github.com/SethFeng/wasp
+
+
+## Wasp
+- Volley + OkHttp
+- 友好的请求API，注解+接口
+- 强大的回调数据封装
+仿Retrofit。
+![架构图](https://github.com/orhanobut/wasp/raw/master/images/wasp-diagram.png)
+Image部分不使用，使用图片库处理。
+
+```java
+public interface GitHubService {
+    @GET("users/{user}/repos")
+    void listRepos(@Path("user") String user, 
+                  Callback<List<Repo>> callback);
+}
+```
+
+```java
+Wasp wasp = new Wasp.Builder(getContext())
+            .setEndpoint("https://api.github.com")
+            .setParser(new CustomParser())
+            .build();
+GitHubService gitHubService = wasp.create(GitHubService.class);
+gitHubService.listRepos("sethfeng", new Callback<List<Repo>>{
+  @Override
+  public void onSuccess(WaspResponse response, List<Repo> repo) {
+    ...
+  }
+  @Override
+  public void onError(WaspError error) {
+    ...
+  }
+});
+```
+
+线程模型和缓存管理使用Volley。
+
+
+### 接口如何实现发请求？
+Wasp#create():
+```java
+public <T> T create(Class<T> service) {
+  if (service == null) {
+    throw new NullPointerException("service param may not be null");
+  }
+  if (!service.isInterface()) {
+    throw new IllegalArgumentException("Only interface type is supported");
+  }
+  NetworkHandler handler = NetworkHandler.newInstance(service, builder);
+  return (T) handler.getProxyClass();
+}
+```
+NetworkHandler#getProxyClass()
+```java
+Object getProxyClass() {
+  List<Method> methods = getMethods(service);
+  fillMethods(methods);
+
+  return Proxy.newProxyInstance(classLoader, new Class[]{service}, this);
+}
+```
+Java动态代理。
+NetworkHandler#invoke():
+```java
+public Object invoke(Object proxy, final Method method, final Object[] args) throws Throwable {
+  final MethodInfo methodInfo = methodInfoCache.get(method.getName());
+
+  switch (methodInfo.getReturnType()) {
+    case VOID:
+      return invokeCallbackRequest(proxy, method, args);
+    case REQUEST:
+      return invokeWaspRequest(proxy, method, args);
+    case OBSERVABLE:
+      return invokeObservable(method, args);
+    case SYNC:
+      return invokeSyncRequest(method, args);
+    default:
+      throw new IllegalStateException(
+          "Return type should be void, WaspRequest, Observable or Object"
+      );
+  }
+}
+```
+根据不同的返回值类型，调用Volley的同步/异步请求接口，完成与Volley的对接。
+Methods解析：
+```java
+private void fillMethods(List<Method> methods) {
+  for (Method method : methods) {
+    MethodInfo methodInfo = MethodInfo.newInstance(context, method);
+    methodInfoCache.put(method.getName(), methodInfo);
+  }
+}
+```
+MethodInfo#parseXXX()
+```java
+public interface GitHubService {
+    @GET("users/{user}/repos")
+    void listRepos(@Path("user") String user, 
+                  Callback<List<Repo>> callback);
+}
+```
+parseMethodAnnotations method.getAnnotations() @GET
+parseParamAnnotations method.getParameterAnnotations() @Path
+parseReturnType method.getGenericReturnType() 异步方式解最后一个参数Callback
+
+Method.parse仅用于请求定义合法化检查，并没有用。真正把注解拼装请求在RequestCreator。
+反射影响性能，应避免频繁调用create()，开发时可保持Service的单例。
+
+### 网络回调数据解析Parser
+VolleyRequest，继承Volley的Request
+```java
+protected com.android.volley.Response parseNetworkResponse(NetworkResponse response) {
+  try {
+    byte[] data = response.data;
+    Object responseObject = Wasp.getParser().fromBody(data, responseObjectType,
+            HttpHeaderParser.parseCharset(response.headers, PROTOCOL_CHARSET));
+    ...
+  }
+  ...
+}
+```
+EMGsonParser
+```java
+public <T> T fromBody(byte[] content, Type type, String charset) throws IOException {
+    if ("byte[]".equals(type.toString())) {
+        return (T) content;
+    } else if (type == String.class) {
+        return (T) new String(content, charset);
+    }
+    // Gson解析
+    ...
+}
+```
+
