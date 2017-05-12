@@ -3,7 +3,6 @@
 # git clone git@github.com:SethFeng/sethfeng.github.io.git
 # cd sethfeng.github.io
 # git checkout source
-# sh install.sh
 npm install hexo --save
 npm install hexo-server --save
 npm install hexo-deployer-git --save
