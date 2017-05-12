@@ -7,6 +7,7 @@
 hexo init ../hexotemp
 cp -R ../hexotemp/node_module .
 cp ../hexotemp/package.json .
+rm -rf ../hexotemp
 # npm install hexo --save
 # npm install hexo-server --save
 npm install hexo-deployer-git --save
