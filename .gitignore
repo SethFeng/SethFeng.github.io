@@ -6,4 +6,5 @@ node_modules/
 public/
 .deploy*/
 package.json
+package-lock.json
 themes/
