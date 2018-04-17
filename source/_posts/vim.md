@@ -13,5 +13,9 @@ cc
 p
 G
 hjkl
+Ctrl + N/P: Complete Next/Previous
 
+ctags -R
 
+Ctrl + v  Shift + i Esc+Esc
+Ctrl + v  d

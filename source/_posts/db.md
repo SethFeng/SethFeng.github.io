@@ -1,0 +1,16 @@
+create database school;
+show databases;
+use school;
+create table student(id integer not null auto_increment primary key, name varchar(50) not null);
+describe student;
+alter table student add column addr varchar(50) default'China';
+create table teacher(id integer not null auto_increment primary key, name varchar(50) not null);
+alter table student add column t_id integer not null;
+alter table student add foreign key (t_id) references teacher(id);
+show create table student;
+insert into teacher(name) values('T1');
+insert into student(name, t_id) values('Lily', 1);
+insert into student(name, t_id, addr) values('Tom', 1, "Shanghai");
+select * from student;
+drop table student;
+drop database school;
