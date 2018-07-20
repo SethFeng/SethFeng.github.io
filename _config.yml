@@ -67,7 +67,6 @@ pagination_dir: page
 # - hexo-generator-feed
 # - hexo-renderer-less
 
-duoshuo_shortname: fengshenzhu
 ## Themes: http://hexo.io/themes/
 theme: next
 
