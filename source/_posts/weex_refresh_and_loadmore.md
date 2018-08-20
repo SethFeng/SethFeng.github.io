@@ -10,13 +10,15 @@ categories:
 ## 相关Weex组件
 - `<scroller>`
   当子组件高度超过一屏时，需要使用`scroller`包含所有子组件，以实现内容随手势滚动。（然而，实践证明，Web平台不加`scroller`也能滑动，Android和iOS是滑不动的）。`scroller`可包含任意类型子组件。不过，鉴于`scroller`在Android上布局性能问题，这个控件在子控件较多时谨慎使用。
-  ![](../assets/weex_scroller_android_layout.png)
+  ![](/assets/weex_scroller_android_layout.png)
 - `<list>`和`<cell>`
   这就是我们常见的列表了。父组件用<list>，包含若干个<cell>子组件。`list`的子组件要求严格，只能包含`cell`/`header`/`refresh`/`loading`四种组件或是fix定位的组件。`cell`显示列表元素内容，`header`实现列表固定头部。
 - `<refresh>`
   下拉刷新组件，一般放在`scroller`或`list`头部
 - `<loading>`
   加载更多组件，一般放在`scroller`或`list`尾部
+
+<!-- more -->
 
 ## 下拉刷新
 下拉刷新通过`refresh`组件实现。示例：
@@ -259,7 +261,7 @@ categories:
 ```
 
 然而，在iOS中，加载到下一页数据UI刷新时抖动了。
-![](../assets/weex_list_loading_ios_shake.mp4)
+![](/assets/weex_list_loading_ios_shake.mp4)
 去掉`loading`里的所有子组件就正常了。
 如果要显示加载下一页的footer UI，就不要用`list` + `loading`了。自定义一个`cell`子组件吧。
 ```javascript
