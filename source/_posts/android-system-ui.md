@@ -155,7 +155,7 @@ if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
 ```
 
 ## 全屏模式-Immersive Sticky
-从Android 4.4开始支持Sticky沉浸全屏模式，用户可通过从屏幕顶部下滑出状态栏或者从底部上滑出导航栏才能退出全屏模式，此时的系统栏为半透明。系统会在若干秒后自动隐藏系统栏，无需监听系统栏可见性变化。这种模式适合严重需要用户沉浸场景的页面。需要在Window每次获取焦点时设置。
+从Android 4.4开始支持Sticky沉浸全屏模式，用户可通过从屏幕顶部下滑出状态栏或者从底部上滑出导航栏才能退出全屏模式，此时的系统栏为半透明。系统会在若干秒后自动隐藏系统栏，用户触摸屏幕也会触发隐藏，无需监听系统栏可见性变化。这种模式适合严重需要用户沉浸场景的页面。需要在Window每次获取焦点时设置。
 ```java
 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
     activity.window.decorView.systemUiVisibility = 
@@ -167,3 +167,5 @@ if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN // stable
 }
 ```
+
+隐藏NavigationBar会被键盘弹起破坏，需要手动再次隐藏

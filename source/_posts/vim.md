@@ -19,3 +19,8 @@ ctags -R
 
 Ctrl + v  Shift + i Esc+Esc
 Ctrl + v  d
+
+
+gd 跳到定义处
+Ctrl + o cursor previous
+Ctrl + i cursor next
