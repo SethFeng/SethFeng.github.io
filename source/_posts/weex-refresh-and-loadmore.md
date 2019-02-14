@@ -11,6 +11,8 @@ categories:
 - `<scroller>`
   当子组件高度超过一屏时，需要使用`scroller`包含所有子组件，以实现内容随手势滚动。（然而，实践证明，Web平台不加`scroller`也能滑动，Android和iOS是滑不动的）。`scroller`可包含任意类型子组件。不过，鉴于`scroller`在Android上布局性能问题，这个控件在子控件较多时谨慎使用。
 
+<!-- more -->
+
 <div >
   <img src="/assets/weex_scroller_android_layout.png" style="width: 50%;"></img>
 </div>
@@ -21,8 +23,6 @@ categories:
   下拉刷新组件，一般放在`scroller`或`list`头部
 - `<loading>`
   加载更多组件，一般放在`scroller`或`list`尾部
-
-<!-- more -->
 
 ## 下拉刷新
 下拉刷新通过`refresh`组件实现。示例：
