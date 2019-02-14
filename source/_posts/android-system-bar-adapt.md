@@ -1,6 +1,6 @@
-title: Android系统UI适配
+title: Android系统栏UI适配
 date: 2018-10-18 19:00:00
-tags: [android, system ui, status bar, navigation bar]
+tags: [Android, UI, SystemBar, StatusBar, NavigationBar]
 categories: Android
 ---
 系统栏包括了状态栏(StatusBar)和导航栏(NavigationBar)。早期的导航栏时实体按键，现在的手机基本上都使用虚拟导航栏。
