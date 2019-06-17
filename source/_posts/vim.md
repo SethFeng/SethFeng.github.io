@@ -24,3 +24,13 @@ Ctrl + v  d
 gd 跳到定义处
 Ctrl + o cursor previous
 Ctrl + i cursor next
+
+替换：
+r
+cw
+% - 全文，缺省为当前行
+g - 全局，缺省为第一个
+:s/xx/yy
+:s/xx/yy/g
+:%s/xx/yy
+:%s/xx/yy/g
