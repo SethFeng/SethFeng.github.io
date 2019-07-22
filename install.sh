@@ -11,7 +11,11 @@
 # npm install hexo --save
 # npm install hexo-server --save
 # npm install hexo-deployer-git --save
-git clone https://github.com/theme-next/hexo-theme-next themes/next
+# git clone https://github.com/theme-next/hexo-theme-next themes/next
 # hexo g
 # hexo s
 # hexo d
+
+
+## build from clone
+yarn

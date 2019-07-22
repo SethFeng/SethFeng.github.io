@@ -6,14 +6,14 @@
 title: Find The Way
 subtitle: You cannot change the world, but you can change an app.
 description: 
-author: Seth Feng
+author: FengShenzhu
 email: fengshenzhu@gmail.com
 language: zh-Hans
 timezone: Asia/Shanghai
 
 # URL
 ## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'
-url: http://poseidon521.com
+url: http://78.141.198.216/blog/index.html
 root: /
 permalink: :title/
 permalink_defaults:
@@ -78,5 +78,5 @@ avatar: /assets/avatar.jpeg
 ## Docs: http://hexo.io/docs/deployment.html
 deploy:
   type: git
-  repository: git@github.com:SethFeng/sethfeng.github.io.git
+  repository: git@github.com:fengshenzhu/fengshenzhu.github.io.git
   branch: master
