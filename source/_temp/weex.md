@@ -51,3 +51,62 @@ weex run ios
 ```bash
 weex debug
 ```
+
+
+## Android Render
+WXPageActivity#refresh
+renderContainer = new RenderContainer(this);
+mInstance = new WXSDKInstance(this);
+
+mInstance.setWXAbstractRenderContainer(renderContainer);
+mInstance.registerRenderListener(this);
+mInstance.setNestedInstanceInterceptor(this);
+mInstance.setBundleUrl(url);
+mInstance.setTrackComponent(true);
+mContainer.addView(renderContainer);
+
+httpTask = new WXHttpTask()
+httpTask.url = url;
+httpTask.requestListener
+WXHttpManager.getInstance().sendRequest(httpTask);
+
+mInstance.render(TAG, new String(task.response.data, "utf-8"), mConfigMap, null, WXRenderStrategy.APPEND_ASYNC);
+
+WXSDKManager.getInstance().createInstance(this, template, renderOptions, jsonInitData);
+
+WXModuleManager.createDomModule(instance);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
