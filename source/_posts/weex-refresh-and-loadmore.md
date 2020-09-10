@@ -1,9 +1,7 @@
 title: Weex下拉刷新和加载更多
 date: 2018-08-20 21:00:00
-tags:
-- weex
-categories:
-- Weex
+tags: [Android, WEEX]
+categories: [Android]
 ---
 下拉刷新和加载更多是列表页面常用功能。通过下拉页面的手势刷新页面，通过上啦到页面底部加载下一页内容。
 

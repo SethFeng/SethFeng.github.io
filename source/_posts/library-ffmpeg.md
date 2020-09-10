@@ -1,6 +1,7 @@
 title: ffmpeg学习笔记
 date: 2016-04-06 13:21:11
-tags:
+tags: [FFMPEG]
+categories: [FFMPEG]
 ---
 官网：http://ffmpeg.org
 Wiki：http://trac.ffmpeg.org

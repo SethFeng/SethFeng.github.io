@@ -1,6 +1,7 @@
 title: Android换肤理论分析
 date: 2015-12-22 20:53:33
-tags: android
+tags: [Android, 换肤]
+categories: [Android]
 ---
 
 # 换肤理论基础：View的创建过程。

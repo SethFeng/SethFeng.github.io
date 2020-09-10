@@ -1,7 +1,7 @@
 title: 使用Hexo搭建博客
 date: 2015-12-23 19:47:47
 tags: [blog, hexo]
-categories: Tools
+categories: [Tools]
 ---
 Markdown对于写博客简直利器，在写之前心里就已经有了样式。有了语法支持，让程序员更激动的以为写作就是在Coding。
 要将Markdown文件发布到博客，得转化成HTML。Hexo就是一个非常容易使用的工具。

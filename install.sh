@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# git clone git@github.com:SethFeng/sethfeng.github.io.git
-# cd sethfeng.github.io
-# git checkout source
+# npm install hexo-cli -g
+# git clone https://github.com/fengshenzhu/blog
+# cd blog
 # sh install.sh
 # hexo init ../hexotemp
 # cp -R ../hexotemp/node_module .
@@ -15,8 +15,8 @@
 # hexo g
 # hexo s
 # hexo d
-
+# hexo clean
 
 ## build from clone
-git clone https://github.com/theme-next/hexo-theme-next themes/next
-yarn
+# git clone https://github.com/theme-next/hexo-theme-next themes/next
+# yarn

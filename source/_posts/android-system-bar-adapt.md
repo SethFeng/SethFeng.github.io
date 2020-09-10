@@ -1,7 +1,7 @@
 title: Android系统栏UI适配
 date: 2018-10-18 19:00:00
 tags: [Android, UI, SystemBar, StatusBar, NavigationBar]
-categories: Android
+categories: [Android]
 ---
 系统栏包括了状态栏(StatusBar)和导航栏(NavigationBar)。早期的导航栏时实体按键，现在的手机基本上都使用虚拟导航栏。
 状态栏和导航栏默认一直显示。APP在系统栏区域显示内容，可让设备一屏显示更多的内容，提升用户体验。当然，利用系统栏显示内容区域，可能会增加App交互的复杂度。

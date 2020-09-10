@@ -1,10 +1,7 @@
 title: Android网络库Wasp
 date: 2016-01-29 18:00:27
-tags:
-- Android
-- 网络
-categories:
-- Android
+tags: [Android, Network]
+categories: [Android]
 ---
 # 介绍
 通过Wasp库使用HTTP GET方式获取内容的示例介绍Wasp的使用，URL为https://api.github.com/users/sethfeng/repos

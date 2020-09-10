@@ -1,7 +1,7 @@
 title: Android Window
 date: 2018-09-18 19:00:00
 tags: [android, window]
-categories: Android
+categories: [Android]
 ---
 
 不像Activity和View，Window算是在Android开发中遇到不那么频繁的类。因为在App开发过程中，我们很少碰到直接面向Window的编程。但是，Window在Android Framework中的作用却十分重要。

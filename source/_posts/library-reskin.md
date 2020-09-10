@@ -1,7 +1,8 @@
 ---
 title: Android换肤
 date: 2015-12-23 20:53:33
-author: 冯神柱
+tags: [Android, 换肤]
+categories: [Android]
 ---
 ## 需求：支持夜间模式
 

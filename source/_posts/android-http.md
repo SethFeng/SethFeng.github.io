@@ -1,7 +1,7 @@
 title: Android HTTP请求
 date: 2015-12-23 20:53:33
-tags: 
-- Android
+tags: [Android, HTTP] 
+categories: [Android]
 ---
 # HTTP协议
 ## HTTP协议历史

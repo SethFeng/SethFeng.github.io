@@ -1,11 +1,7 @@
 title: Retrofit学习笔记
 date: 2016-02-02 10:25:14
-tags:
-- Retrofit
-- Android
-- Network
-categories:
-- Android
+tags: [Retrofit, Android, Network]
+categories: [Android]
 ---
 
 Version 1.0.0

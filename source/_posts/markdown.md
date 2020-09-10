@@ -1,7 +1,7 @@
 title: 常用Markdown语法
 date: 2015-12-23 19:11:23
 tags: [blog, markdown]
-categories: Language
+categories: [Language]
 ---
 Markdown语法还是比较简单的。经常使用的有：
 # 目录

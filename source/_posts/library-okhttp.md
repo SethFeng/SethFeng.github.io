@@ -1,9 +1,7 @@
 title: OkHttp
 date: 2016-02-02 10:25:14
-tags:
-- Android
-categories:
-- Android
+tags: [Android]
+categories: [Android]
 ---
 
 ### 线程模型

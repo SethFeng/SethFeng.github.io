@@ -1,12 +1,7 @@
 title: Android文件上传与下载
 date: 2016-03-08 18:23:55
-tags:
-- Android
-- Network
-- Download
-- Upload
-categories:
-- Android Network
+tags: [Android, Network, Download, Upload]
+categories: [Android]
 ---
 
 ### content type

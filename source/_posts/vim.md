@@ -1,6 +1,7 @@
 title: Vim Shortcuts
 date: 2015-12-23 23:38:04
-tags:
+tags: [VIM]
+categories: [Tools]
 ---
 :mkview
 :loadview
